@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berk Media</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100vh}
+.header{background:#111;border-bottom:1px solid #222;padding:16px 24px;display:flex;align-items:center;gap:15px}
+.header h1{font-size:1.3rem;font-weight:600;color:#fff}
+.header .badge{background:#2563eb;color:#fff;font-size:0.7rem;padding:3px 8px;border-radius:10px;font-weight:500}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.search-bar{display:flex;gap:10px;margin-bottom:24px}
+.search-bar input{background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:12px 16px;border-radius:8px;font-size:0.95rem;flex:1;outline:none}
+.search-bar input:focus{border-color:#2563eb}
+.search-bar button{background:#2563eb;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.95rem}
+.search-bar button:hover{background:#1d4ed8}
+.search-bar button:disabled{background:#333;cursor:not-allowed}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:30px}
+.card{background:#141414;border:1px solid #222;border-radius:10px;overflow:hidden;cursor:pointer;transition:all 0.2s}
+.card:hover{border-color:#2563eb;transform:translateY(-2px)}
+.card img{width:100%;aspect-ratio:2/3;object-fit:cover;background:#1a1a1a}
+.card .info{padding:12px}
+.card .title{font-size:0.9rem;font-weight:500;color:#e0e0e0;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .meta{font-size:0.78rem;color:#666}
+.card .imdb{background:#f5c518;color:#000;font-size:0.7rem;padding:2px 6px;border-radius:4px;font-weight:700;margin-right:6px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:100;overflow-y:auto}
+.modal-overlay.active{display:flex;justify-content:center;padding:40px 20px}
+.modal{background:#141414;border:1px solid #222;border-radius:16px;width:100%;max-width:900px;padding:30px;position:relative}
+.modal .close{position:absolute;top:15px;right:20px;background:none;border:none;color:#888;font-size:1.5rem;cursor:pointer}
+.modal .close:hover{color:#fff}
+.detail{display:flex;gap:24px}
+.detail .poster{flex:0 0 250px}
+.detail .poster img{width:100%;border-radius:10px}
+.detail .info{flex:1}
+.detail .info h2{font-size:1.4rem;color:#fff;margin-bottom:8px}
+.detail .info .year{color:#666;font-size:0.9rem;margin-bottom:12px}
+.detail .info .desc{color:#aaa;font-size:0.9rem;line-height:1.6;margin-bottom:16px}
+.detail .info .tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.detail .info .tag{background:#1a1a1a;border:1px solid #333;padding:4px 12px;border-radius:6px;font-size:0.8rem;color:#aaa}
+.selects{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.selects select{background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:10px 14px;border-radius:8px;font-size:0.9rem;outline:none}
+.selects select:focus{border-color:#2563eb}
+.dl-btn{background:#22c55e;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:0.95rem;cursor:pointer}
+.dl-btn:hover{background:#16a34a}
+.dl-btn:disabled{background:#333;cursor:not-allowed}
+.downloads{margin-top:30px}
+.downloads h3{color:#fff;font-size:1.1rem;margin-bottom:12px}
+.dl-item{background:#1a1a1a;border:1px solid #222;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.dl-item .title{font-size:0.9rem;color:#e0e0e0}
+.dl-item .status{font-size:0.8rem;padding:3px 10px;border-radius:12px}
+.dl-item .status.completed{background:#166534;color:#4ade80}
+.dl-item .status.downloading{background:#1e3a5f;color:#60a5fa}
+.dl-item .status.error{background:#7f1d1d;color:#f87171}
+.dl-item .status.merging{background:#713f12;color:#fbbf24}
+.progress-bar{width:100%;height:4px;background:#222;border-radius:2px;margin-top:6px}
+.progress-bar .fill{height:100%;background:#2563eb;border-radius:2px;transition:width 0.3s}
+.empty{color:#555;text-align:center;padding:40px}
+.loading{color:#2563eb;text-align:center;padding:20px}
+@media(max-width:700px){.detail{flex-direction:column}.detail .poster{flex:none;max-width:200px;margin:0 auto}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>Berk Media</h1>
+<span class="badge">v1.0</span>
+</div>
+<div class="container">
+<div class="search-bar">
+<input type="text" id="searchInput" placeholder="Film adı yazın..." autocomplete="off">
+<button id="searchBtn" onclick="search()">Ara</button>
+</div>
+<div id="results" class="results"></div>
+<div id="detailArea"></div>
+<div class="downloads">
+<h3>İndirmeler</h3>
+<div id="dlList"><div class="empty">Henüz indirme yok</div></div>
+</div>
+</div>
+<div class="modal-overlay" id="modal">
+<div class="modal">
+<button class="close" onclick="closeModal()">&times;</button>
+<div id="modalContent"></div>
+</div>
+</div>
+<script>
+let dirs=[];
+let currentFilm=null;
+
+async function loadDirs(){
+  const r=await fetch('/api/dirs');
+  dirs=await r.json();
+}
+
+async function search(){
+  const q=document.getElementById('searchInput').value.trim();
+  if(q.length<2)return;
+  document.getElementById('results').innerHTML='<div class="loading">Aranıyor...</div>';
+  document.getElementById('searchBtn').disabled=true;
+  try{
+    const r=await fetch('/api/search?q='+encodeURIComponent(q));
+    const data=await r.json();
+    renderResults(data);
+  }catch(e){
+    document.getElementById('results').innerHTML='<div class="empty">Arama hatası</div>';
+  }
+  document.getElementById('searchBtn').disabled=false;
+}
+
+function renderResults(films){
+  const c=document.getElementById('results');
+  if(!films.length){c.innerHTML='<div class="empty">Sonuç bulunamadı</div>';return}
+  c.innerHTML=films.map(f=>`
+    <div class="card" onclick="showDetail('${f.url.replace(/'/g,"\\'")}')">
+      ${f.poster?`<img src="${f.poster}" alt="${f.title}" loading="lazy">`:'<div style="aspect-ratio:2/3;background:#1a1a1a"></div>'}
+      <div class="info">
+        <div class="title">${f.title}</div>
+        <div class="meta">
+          ${f.imdb?`<span class="imdb">IMDB ${f.imdb}</span>`:''}
+          ${f.year||''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function showDetail(url){
+  document.getElementById('modal').classList.add('active');
+  document.getElementById('modalContent').innerHTML='<div class="loading">Yükleniyor...</div>';
+  try{
+    const r=await fetch('/api/film?url='+encodeURIComponent(url));
+    currentFilm=await r.json();
+    renderDetail();
+  }catch(e){
+    document.getElementById('modalContent').innerHTML='<div class="empty">Detay yüklenemedi</div>';
+  }
+}
+
+function renderDetail(){
+  const f=currentFilm;
+  if(!f||!f.title)return;
+  awaitDirs();
+  const dirOptions=dirs.map(d=>`<option value="${d.path}">${d.name}</option>`).join('');
+  document.getElementById('modalContent').innerHTML=`
+    <div class="detail">
+      <div class="poster">
+        ${f.poster?`<img src="${f.poster}" alt="${f.title}">`:''}
+      </div>
+      <div class="info">
+        <h2>${f.title}${f.year?' ('+f.year+')':''}</h2>
+        ${f.imdb?`<div class="year">IMDB: ${f.imdb}</div>`:''}
+        ${f.duration?`<div class="year">${f.duration}</div>`:''}
+        ${f.description?`<div class="desc">${f.description.substring(0,300)}...</div>`:''}
+        ${f.director?`<div class="tags"><span class="tag">Yönetmen: ${f.director}</span></div>`:''}
+        ${f.sources&&f.sources.length?`
+          <div class="selects">
+            <select id="srcSelect">
+              ${f.sources.map((s,i)=>`<option value="${i}">Kaynak ${i+1}</option>`).join('')}
+            </select>
+          </div>
+        `:'<div class="empty">Video kaynağı bulunamadı</div>'}
+        ${dirs.length?`
+          <div class="selects">
+            <select id="dirSelect">${dirOptions}</select>
+          </div>
+        `:''}
+        <button class="dl-btn" onclick="startDownload()" ${!f.sources||!f.sources.length?'disabled':''}>İndir</button>
+      </div>
+    </div>
+  `;
+}
+
+function awaitDirs(){
+  if(!dirs.length)loadDirs();
+}
+
+async function startDownload(){
+  if(!currentFilm||!currentFilm.sources)return;
+  const srcIdx=document.getElementById('srcSelect')?.value||0;
+  const saveDir=document.getElementById('dirSelect')?.value||dirs[0]?.path||'/mnt/3tb/Medya/Movies';
+  const src=currentFilm.sources[srcIdx];
+  try{
+    const r=await fetch('/api/download',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title:currentFilm.title+(currentFilm.year?' ('+currentFilm.year+')':''),
+        video_url:src.url,
+        subtitles:currentFilm.subtitles||[],
+        save_dir:saveDir,
+        poster:currentFilm.poster||''
+      })
+    });
+    const data=await r.json();
+    if(data.task_id){
+      closeModal();
+      pollDownload(data.task_id);
+    }
+  }catch(e){}
+}
+
+async function pollDownload(taskId){
+  const interval=setInterval(async()=>{
+    try{
+      const r=await fetch('/api/download/'+taskId);
+      const d=await r.json();
+      renderDownloads();
+      if(d.status==='completed'||d.status==='error'||d.status==='merge_error'){
+        clearInterval(interval);
+      }
+    }catch(e){clearInterval(interval)}
+  },2000);
+}
+
+async function renderDownloads(){
+  try{
+    const r=await fetch('/api/downloads');
+    const data=await r.json();
+    const c=document.getElementById('dlList');
+    const items=Object.entries(data);
+    if(!items.length){c.innerHTML='<div class="empty">Henüz indirme yok</div>';return}
+    c.innerHTML=items.map(([id,d])=>`
+      <div class="dl-item">
+        <div>
+          <div class="title">${d.title||id}</div>
+          ${d.progress?`<div class="progress-bar"><div class="fill" style="width:${d.progress}%"></div></div>`:''}
+        </div>
+        <span class="status ${d.status}">${statusText(d.status)}</span>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+
+function statusText(s){
+  const map={starting:'Başlatılıyor',downloading:'İndiriliyor',downloading_hls:'HLS İndiriliyor',merging:'Birleştiriliyor',completed:'Tamamlandı',error:'Hata',merge_error:'Birleştirme Hatası'};
+  return map[s]||s;
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('active')}
+
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+loadDirs();
+setInterval(renderDownloads,10000);
+</script>
+</body>
+</html>

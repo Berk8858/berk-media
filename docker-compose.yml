@@ -1,0 +1,23 @@
+services:
+  berk-media:
+    build: .
+    container_name: berk-media
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      - MEDIA_ROOT=/mnt/3tb/Medya
+    volumes:
+      - /mnt/3tb/Medya:/mnt/3tb/Medya
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: "1.0"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
