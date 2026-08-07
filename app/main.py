@@ -15,7 +15,7 @@ from datetime import datetime
 
 import httpx
 from fastapi import FastAPI, Request, Query, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Berk Media", docs_url=None, redoc_url=None)
@@ -66,38 +66,61 @@ def vtt_to_srt(vtt_content: str) -> str:
 async def search_fullhdfilmizlesene(query: str) -> list[dict]:
     async with httpx.AsyncClient(headers=HEADERS, timeout=15, follow_redirects=True) as client:
         try:
-            resp = await client.get(
-                "https://www.fullhdfilmizlesene.mx/",
-                params={"arama": query}
-            )
+            slug = query.lower().replace(" ", "+").replace("ı", "i").replace("ö", "o").replace("ü", "u").replace("ş", "s").replace("ç", "c").replace("ğ", "g")
+            resp = await client.get(f"https://www.fullhdfilmizlesene.mx/arama/{slug}")
+            if resp.status_code != 200:
+                resp = await client.get("https://www.fullhdfilmizlesene.mx/", params={"q": query})
             if resp.status_code != 200:
                 return []
-            return parse_search_results(resp.text, "fullhdfilmizlesene")
+            return parse_fullhdfilmizlesene_results(resp.text)
         except Exception:
             return []
 
 
-def parse_search_results(html: str, source: str) -> list[dict]:
+def parse_fullhdfilmizlesene_results(html: str) -> list[dict]:
     results = []
-    if source == "fullhdfilmizlesene":
-        pattern = r'<a class="tt" href="(https://www\.fullhdfilmizlesene\.mx/film/[^"]+)"[^>]*>([^<]+)</a>.*?<span class="film-title">([^<]*)</span>(?:\s*<span class="kt">([^<]*)</span>)?.*?(?:<span class="imdb">([^<]*)</span>)?.*?<span class="film-yil">(\d{4})</span>'
-        for m in re.finditer(pattern, html, re.DOTALL):
-            url = m.group(1)
-            title_tr = m.group(3).strip() or m.group(2).strip()
-            title_en = m.group(4).strip() if m.group(4) else ""
-            imdb = m.group(5) if m.group(5) else ""
-            year = m.group(6)
-            poster_match = re.search(r'data-src="(https://img\.fullhdfilmizlesene\.mx/poster/film/[^"]+\.jpg)"', html[m.start():m.start()+2000])
-            poster = poster_match.group(1) if poster_match else ""
-            results.append({
-                "title": title_tr,
-                "original_title": title_en,
-                "year": year,
-                "imdb": imdb,
-                "url": url,
-                "poster": poster,
-                "source": "fullhdfilmizlesene",
-            })
+    seen = set()
+
+    links = re.findall(
+        r'href="(https://www\.fullhdfilmizlesene\.mx/film/[^"]+)"[^>]*>([^<]*)</a>',
+        html
+    )
+    titles = re.findall(r'<span class="film-title">([^<]+)</span>', html)
+    posters = re.findall(r'(?:data-src|src)="(https?://img\.fullhdfilmizlesene\.mx/poster/[^"]+\.(?:jpg|jpeg|png|webp|gif|avif))"', html)
+    if len(posters) < len(links):
+        more = re.findall(r'(?:data-src|src)="(https?://[^"]+\.(?:jpg|jpeg|png|webp|gif|avif)[^"]*)"', html)
+        seen_urls = set(posters)
+        for u in more:
+            if u not in seen_urls and 'poster' in u.lower():
+                posters.append(u)
+    years = re.findall(r'<span class="film-yil">(\d{4})</span>', html)
+    imdbs = re.findall(r'<span class="imdb">([^<]+)</span>', html)
+    qualities = re.findall(r'<span class="uhd">([^<]+)</span>', html)
+
+    for i, (url, raw_title) in enumerate(links):
+        if url in seen:
+            continue
+        seen.add(url)
+
+        title = titles[i].strip() if i < len(titles) else raw_title.strip()
+        if not title or title == "izle":
+            title = raw_title.replace(" izle", "").strip()
+
+        year = years[i] if i < len(years) else ""
+        imdb = imdbs[i] if i < len(imdbs) else ""
+        poster = posters[i] if i < len(posters) else ""
+        quality = qualities[i] if i < len(qualities) else ""
+
+        results.append({
+            "title": title,
+            "year": year,
+            "imdb": imdb,
+            "url": url,
+            "poster": poster,
+            "quality": quality,
+            "source": "fullhdfilmizlesene.mx",
+        })
+
     return results
 
 
@@ -143,9 +166,13 @@ def parse_film_details(html: str, url: str) -> dict:
             details["title"] = title_match.group(1).strip()
 
     if "poster" not in details or not details["poster"]:
-        poster_match = re.search(r'data-src="(https://img\.fullhdfilmizlesene\.mx/poster/izle/[^"]+\.jpg)"', html)
+        poster_match = re.search(r'(?:data-src|src)="(https?://img\.fullhdfilmizlesene\.mx/poster/[^"]+\.(?:jpg|jpeg|png|webp|gif|avif))"', html)
         if poster_match:
             details["poster"] = poster_match.group(1)
+        else:
+            poster_match = re.search(r'(?:data-src|src)="(https?://[^"]+\.(?:jpg|jpeg|png|webp|gif|avif)[^"]*)"', html)
+            if poster_match and 'poster' in poster_match.group(1).lower():
+                details["poster"] = poster_match.group(1)
 
     year_match = re.search(r'"datePublished":"(\d{4})', html)
     if year_match:
@@ -257,8 +284,8 @@ async def api_dirs():
 
 @app.get("/api/search")
 async def api_search(q: str = Query(..., min_length=2)):
-    results = await search_fullhdfilmizlesene(q)
-    return results
+    results_fhd = await search_fullhdfilmizlesene(q)
+    return results_fhd
 
 
 @app.get("/api/film")
@@ -278,6 +305,19 @@ async def api_convert_subtitle(url: str = Query(...)):
         srt_path = TEMP_DIR / filename
         srt_path.write_text(srt_content, encoding="utf-8")
         return {"content": srt_content, "filename": filename}
+
+
+@app.get("/api/poster")
+async def api_poster(url: str = Query(...)):
+    try:
+        async with httpx.AsyncClient(headers=HEADERS, timeout=10, follow_redirects=True) as client:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                ct = resp.headers.get("content-type", "image/jpeg")
+                return Response(content=resp.content, media_type=ct)
+    except Exception:
+        pass
+    return Response(status_code=404)
 
 
 @app.post("/api/download")
