@@ -43,10 +43,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .detail .info .desc{color:#aaa;font-size:0.85rem;line-height:1.5;margin-bottom:14px}
 .detail .info .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 .detail .info .tag{background:#1a1a1a;border:1px solid #333;padding:3px 10px;border-radius:5px;font-size:0.75rem;color:#aaa}
-.selects{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.selects select{background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:8px 12px;border-radius:8px;font-size:0.85rem;outline:none;max-width:100%}
-.selects select:focus{border-color:#2563eb}
-.dl-btn{background:#22c55e;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer}
+.options-section{margin-top:16px;border-top:1px solid #222;padding-top:16px}
+.options-section h3{font-size:0.95rem;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.options-section h3 .icon{font-size:1.1rem}
+.opt-group{margin-bottom:14px}
+.opt-group label{display:block;font-size:0.8rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.opt-group select,.opt-group input[type="text"]{background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:8px 12px;border-radius:8px;font-size:0.85rem;outline:none;width:100%;max-width:400px}
+.opt-group select:focus{border-color:#2563eb}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#1a1a1a;border:1px solid #333;padding:5px 12px;border-radius:6px;font-size:0.8rem;color:#aaa;cursor:pointer;transition:all 0.15s;user-select:none}
+.chip:hover{border-color:#2563eb;color:#e0e0e0}
+.chip.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.chip .order{font-size:0.65rem;color:#60a5fa;margin-left:4px}
+.priority-list{display:flex;flex-direction:column;gap:4px;max-width:400px}
+.priority-item{display:flex;align-items:center;gap:8px;background:#1a1a1a;border:1px solid #333;padding:6px 10px;border-radius:6px;font-size:0.8rem}
+.priority-item .num{background:#2563eb;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0}
+.priority-item .name{flex:1;color:#e0e0e0}
+.priority-item .remove{color:#666;cursor:pointer;font-size:0.9rem}
+.priority-item .remove:hover{color:#f87171}
+.priority-item .arrow{color:#666;cursor:pointer;font-size:0.7rem}
+.priority-item .arrow:hover{color:#60a5fa}
+.dl-btn{background:#22c55e;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:0.95rem;cursor:pointer;margin-top:16px}
 .dl-btn:hover{background:#16a34a}
 .dl-btn:disabled{background:#333;cursor:not-allowed}
 .downloads{margin-top:24px}
@@ -86,7 +103,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <body>
 <div class="header">
 <h1>Berk Media</h1>
-<span class="badge">v1.0</span>
+<span class="badge">v1.1</span>
 </div>
 <div class="container">
 <div class="search-bar">
@@ -94,7 +111,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <button id="searchBtn" onclick="search()">Ara</button>
 </div>
 <div id="results" class="results"></div>
-<div id="detailArea"></div>
 <div class="downloads">
 <h3>İndirmeler</h3>
 <div id="dlList"><div class="empty">Henüz indirme yok</div></div>
@@ -109,6 +125,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 let dirs=[];
 let currentFilm=null;
+let probeData=null;
+let audioPriority=[];
+let subPriority=[];
 
 async function loadDirs(){
   const r=await fetch('/api/dirs');
@@ -157,10 +176,40 @@ function renderResults(films){
 async function showDetail(url){
   document.getElementById('modal').classList.add('active');
   document.getElementById('modalContent').innerHTML='<div class="loading">Yükleniyor...</div>';
+  probeData=null;
+  audioPriority=[];
+  subPriority=[];
   try{
     const r=await fetch('/api/film?url='+encodeURIComponent(url));
     currentFilm=await r.json();
     renderDetail();
+    if(currentFilm.youtube_url||currentFilm.youtube_id){
+      const ytUrl=currentFilm.youtube_url||`https://www.youtube.com/watch?v=${currentFilm.youtube_id}`;
+      document.getElementById('modalContent').innerHTML+='<div class="loading" id="probeStatus">Video bilgisi alınıyor...</div>';
+      try{
+        const pr=await fetch('/api/probe?url='+encodeURIComponent(ytUrl));
+        probeData=await pr.json();
+        if(probeData.error){
+          document.getElementById('probeStatus').innerHTML='<div class="empty">'+probeData.error+'</div>';
+        }else{
+          if(probeData.audio_formats&&probeData.audio_formats.length){
+            const turkish=probeData.audio_formats.find(a=>a.language&&(a.language.includes('tur')||a.language.includes('Türk')));
+            if(turkish)audioPriority=[turkish.language];
+            const english=probeData.audio_formats.find(a=>a.language&&(a.language.includes('eng')||a.language.includes('İng')));
+            if(english&&!audioPriority.includes(english.language))audioPriority.push(english.language);
+          }
+          if(probeData.subtitles&&probeData.subtitles.length){
+            const trSub=probeData.subtitles.find(s=>s.language&&(s.language.includes('tur')||s.language.includes('tr')));
+            if(trSub)subPriority=[trSub.language];
+            const enSub=probeData.subtitles.find(s=>s.language&&(s.language.includes('eng')||s.language.includes('en')));
+            if(enSub&&!subPriority.includes(enSub.language))subPriority.push(enSub.language);
+          }
+          renderDetail();
+        }
+      }catch(e){
+        document.getElementById('probeStatus').innerHTML='<div class="empty">Video bilgisi alınamadı</div>';
+      }
+    }
   }catch(e){
     document.getElementById('modalContent').innerHTML='<div class="empty">Detay yüklenemedi</div>';
   }
@@ -171,6 +220,72 @@ function renderDetail(){
   if(!f||!f.title)return;
   awaitDirs();
   const dirOptions=dirs.map(d=>`<option value="${d.path}">${d.name}</option>`).join('');
+
+  let qualityHtml='';
+  if(probeData&&probeData.video_formats&&probeData.video_formats.length){
+    qualityHtml=`
+      <div class="opt-group">
+        <label>Video Kalitesi</label>
+        <select id="qualitySelect">
+          ${probeData.video_formats.map((v,i)=>`<option value="${v.format_id}" ${i===0?'selected':''}>${v.label} (${v.ext})</option>`).join('')}
+        </select>
+      </div>`;
+  }
+
+  let audioHtml='';
+  if(probeData&&probeData.audio_formats&&probeData.audio_formats.length){
+    audioHtml=`
+      <div class="opt-group">
+        <label>Ses Dosyası (Sıralama için tıklayın)</label>
+        <div class="chips" id="audioChips">
+          ${probeData.audio_formats.map(a=>{
+            const idx=audioPriority.indexOf(a.language);
+            const active=idx>=0;
+            return `<span class="chip ${active?'active':''}" onclick="toggleAudio('${a.language}')">${a.label}${active?`<span class="order">#${idx+1}</span>`:''}</span>`;
+          }).join('')}
+        </div>
+        ${audioPriority.length?`
+          <div class="priority-list" id="audioPriority" style="margin-top:8px">
+            ${audioPriority.map((lang,i)=>`
+              <div class="priority-item">
+                <span class="num">${i+1}</span>
+                <span class="name">${lang}</span>
+                <span class="arrow" onclick="moveAudio(${i},-1)>&#9650;</span>
+                <span class="arrow" onclick="moveAudio(${i},1)>&#9660;</span>
+                <span class="remove" onclick="removeAudio(${i})">&times;</span>
+              </div>`).join('')}
+          </div>`:''}
+      </div>`;
+  }
+
+  let subHtml='';
+  if(probeData&&probeData.subtitles&&probeData.subtitles.length){
+    subHtml=`
+      <div class="opt-group">
+        <label>Altyazılar (Sıralama için tıklayın)</label>
+        <div class="chips" id="subChips">
+          ${probeData.subtitles.map(s=>{
+            const idx=subPriority.indexOf(s.language);
+            const active=idx>=0;
+            return `<span class="chip ${active?'active':''}" onclick="toggleSub('${s.language}')">${s.label}${active?`<span class="order">#${idx+1}</span>`:''}</span>`;
+          }).join('')}
+        </div>
+        ${subPriority.length?`
+          <div class="priority-list" id="subPriority" style="margin-top:8px">
+            ${subPriority.map((lang,i)=>`
+              <div class="priority-item">
+                <span class="num">${i+1}</span>
+                <span class="name">${lang}</span>
+                <span class="arrow" onclick="moveSub(${i},-1)>&#9650;</span>
+                <span class="arrow" onclick="moveSub(${i},1)>&#9660;</span>
+                <span class="remove" onclick="removeSub(${i})">&times;</span>
+              </div>`).join('')}
+          </div>`:''}
+      </div>`;
+  }
+
+  const hasProbe=probeData&&!probeData.error;
+
   document.getElementById('modalContent').innerHTML=`
     <div class="detail">
       <div class="poster">
@@ -182,21 +297,28 @@ function renderDetail(){
         ${f.duration?`<div class="year">${f.duration}</div>`:''}
         ${f.description?`<div class="desc">${f.description.substring(0,300)}...</div>`:''}
         ${f.director?`<div class="tags"><span class="tag">Yönetmen: ${f.director}</span></div>`:''}
-        ${f.sources&&f.sources.length?`
-          <div class="selects">
-            <select id="srcSelect">
-              ${f.sources.map((s,i)=>`<option value="${i}">Kaynak ${i+1}</option>`).join('')}
-            </select>
-          </div>
-        `:'<div class="empty">Video kaynağı bulunamadı</div>'}
-        ${dirs.length?`
-          <div class="selects">
-            <select id="dirSelect">${dirOptions}</select>
-          </div>
-        `:''}
-        <button class="dl-btn" onclick="startDownload()" ${!f.sources||!f.sources.length?'disabled':''}>İndir</button>
       </div>
     </div>
+    ${hasProbe?`
+    <div class="options-section">
+      <h3><span class="icon">&#9881;</span> İndirme Seçenekleri</h3>
+      ${qualityHtml}
+      ${audioHtml}
+      ${subHtml}
+      <div class="opt-group">
+        <label>Kaydetme Formatı</label>
+        <select id="formatSelect">
+          <option value="mkv">MKV (varsayılan)</option>
+          <option value="mp4">MP4</option>
+        </select>
+      </div>
+      <div class="opt-group">
+        <label>Kayıt Klasörü</label>
+        <select id="dirSelect">${dirOptions}</select>
+      </div>
+    </div>
+    `:''}
+    <button class="dl-btn" onclick="startDownload()" ${!hasProbe?'disabled':''}>İndir</button>
   `;
 }
 
@@ -204,20 +326,72 @@ function awaitDirs(){
   if(!dirs.length)loadDirs();
 }
 
+function toggleAudio(lang){
+  const idx=audioPriority.indexOf(lang);
+  if(idx>=0){
+    audioPriority.splice(idx,1);
+  }else{
+    audioPriority.push(lang);
+  }
+  renderDetail();
+}
+
+function removeAudio(idx){
+  audioPriority.splice(idx,1);
+  renderDetail();
+}
+
+function moveAudio(idx,dir){
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=audioPriority.length)return;
+  [audioPriority[idx],audioPriority[newIdx]]=[audioPriority[newIdx],audioPriority[idx]];
+  renderDetail();
+}
+
+function toggleSub(lang){
+  const idx=subPriority.indexOf(lang);
+  if(idx>=0){
+    subPriority.splice(idx,1);
+  }else{
+    subPriority.push(lang);
+  }
+  renderDetail();
+}
+
+function removeSub(idx){
+  subPriority.splice(idx,1);
+  renderDetail();
+}
+
+function moveSub(idx,dir){
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=subPriority.length)return;
+  [subPriority[idx],subPriority[newIdx]]=[subPriority[newIdx],subPriority[idx]];
+  renderDetail();
+}
+
 async function startDownload(){
-  if(!currentFilm||!currentFilm.sources)return;
-  const srcIdx=document.getElementById('srcSelect')?.value||0;
-  const saveDir=document.getElementById('dirSelect')?.value||dirs[0]?.path||'/mnt/3tb/Medya/Movies';
-  const src=currentFilm.sources[srcIdx];
+  if(!currentFilm)return;
+  const qualityEl=document.getElementById('qualitySelect');
+  const formatEl=document.getElementById('formatSelect');
+  const dirEl=document.getElementById('dirSelect');
+  const format_id=qualityEl?qualityEl.value:'';
+  const output_format=formatEl?formatEl.value:'mkv';
+  const save_dir=dirEl?dirEl.value:(dirs[0]?.path||'/mnt/3tb/Medya/Movies');
+  const video_url=currentFilm.youtube_url||currentFilm.youtube_id?`https://www.youtube.com/watch?v=${currentFilm.youtube_id}`:(currentFilm.url||'');
+
   try{
     const r=await fetch('/api/download',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         title:currentFilm.title+(currentFilm.year?' ('+currentFilm.year+')':''),
-        video_url:src.url,
-        subtitles:currentFilm.subtitles||[],
-        save_dir:saveDir,
+        url:video_url,
+        format_id:format_id,
+        audio_lang:audioPriority[0]||'',
+        sub_langs:subPriority,
+        output_format:output_format,
+        save_dir:save_dir,
         poster:currentFilm.poster||''
       })
     });
