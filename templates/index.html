@@ -28,7 +28,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card .meta{font-size:0.72rem;color:#666;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .card .imdb{background:#f5c518;color:#000;font-size:0.65rem;padding:1px 5px;border-radius:3px;font-weight:700}
 .card .quality{background:#2563eb;color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:3px}
-.card .source{background:rgba(0,0,0,0.7);color:#aaa;font-size:0.6rem;padding:2px 5px;border-radius:3px;position:absolute;top:6px;right:6px;z-index:1}
+.card .source-tag{background:rgba(0,0,0,0.7);color:#aaa;font-size:0.6rem;padding:2px 5px;border-radius:3px;position:absolute;top:6px;right:6px;z-index:1}
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal-overlay.active{display:flex;justify-content:center;padding:20px 12px}
 .modal{background:#141414;border:1px solid #222;border-radius:12px;width:100%;max-width:900px;padding:20px;position:relative}
@@ -43,26 +43,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .detail .info .desc{color:#aaa;font-size:0.85rem;line-height:1.5;margin-bottom:14px}
 .detail .info .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 .detail .info .tag{background:#1a1a1a;border:1px solid #333;padding:3px 10px;border-radius:5px;font-size:0.75rem;color:#aaa}
-.options-section{margin-top:16px;border-top:1px solid #222;padding-top:16px}
-.options-section h3{font-size:0.95rem;color:#fff;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.options-section h3 .icon{font-size:1.1rem}
+.opts{margin-top:16px;border-top:1px solid #222;padding-top:16px}
+.opts h3{font-size:0.95rem;color:#fff;margin-bottom:14px}
 .opt-group{margin-bottom:14px}
 .opt-group label{display:block;font-size:0.8rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
-.opt-group select,.opt-group input[type="text"]{background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:8px 12px;border-radius:8px;font-size:0.85rem;outline:none;width:100%;max-width:400px}
+.opt-group select{background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:8px 12px;border-radius:8px;font-size:0.85rem;outline:none;width:100%;max-width:400px}
 .opt-group select:focus{border-color:#2563eb}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;max-width:500px}
 .chip{background:#1a1a1a;border:1px solid #333;padding:5px 12px;border-radius:6px;font-size:0.8rem;color:#aaa;cursor:pointer;transition:all 0.15s;user-select:none}
 .chip:hover{border-color:#2563eb;color:#e0e0e0}
-.chip.active{background:#2563eb;border-color:#2563eb;color:#fff}
-.chip .order{font-size:0.65rem;color:#60a5fa;margin-left:4px}
-.priority-list{display:flex;flex-direction:column;gap:4px;max-width:400px}
-.priority-item{display:flex;align-items:center;gap:8px;background:#1a1a1a;border:1px solid #333;padding:6px 10px;border-radius:6px;font-size:0.8rem}
-.priority-item .num{background:#2563eb;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0}
-.priority-item .name{flex:1;color:#e0e0e0}
-.priority-item .remove{color:#666;cursor:pointer;font-size:0.9rem}
-.priority-item .remove:hover{color:#f87171}
-.priority-item .arrow{color:#666;cursor:pointer;font-size:0.7rem}
-.priority-item .arrow:hover{color:#60a5fa}
+.chip.on{background:#2563eb;border-color:#2563eb;color:#fff}
+.chip .ord{font-size:0.65rem;color:#93c5fd;margin-left:4px}
+.pri-list{display:flex;flex-direction:column;gap:4px;max-width:400px;margin-top:8px}
+.pri-item{display:flex;align-items:center;gap:8px;background:#1a1a1a;border:1px solid #333;padding:6px 10px;border-radius:6px;font-size:0.8rem}
+.pri-item .num{background:#2563eb;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0}
+.pri-item .name{flex:1;color:#e0e0e0}
+.pri-item .btns{display:flex;gap:4px}
+.pri-item .btns span{color:#666;cursor:pointer;padding:0 4px}
+.pri-item .btns span:hover{color:#60a5fa}
 .dl-btn{background:#22c55e;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:0.95rem;cursor:pointer;margin-top:16px}
 .dl-btn:hover{background:#16a34a}
 .dl-btn:disabled{background:#333;cursor:not-allowed}
@@ -79,371 +77,343 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .progress-bar .fill{height:100%;background:#2563eb;border-radius:2px;transition:width 0.3s}
 .empty{color:#555;text-align:center;padding:30px 16px}
 .loading{color:#2563eb;text-align:center;padding:16px}
-@media(min-width:480px){
-  .header{padding:14px 20px}
-  .header h1{font-size:1.2rem}
-  .container{padding:20px}
-  .results{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
-}
-@media(min-width:768px){
-  .header{padding:16px 24px}
-  .header h1{font-size:1.3rem}
-  .container{padding:24px}
-  .results{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
-  .modal-overlay.active{padding:30px 20px}
-  .modal{padding:28px}
-  .detail .poster{flex:0 0 250px}
-}
-@media(min-width:1024px){
-  .results{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
-  .modal{max-width:950px}
-}
+@media(min-width:480px){.header{padding:14px 20px}.container{padding:20px}.results{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}}
+@media(min-width:768px){.header{padding:16px 24px}.container{padding:24px}.results{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}.modal-overlay.active{padding:30px 20px}.modal{padding:28px}.detail .poster{flex:0 0 250px}}
+@media(min-width:1024px){.results{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.modal{max-width:950px}}
 </style>
 </head>
 <body>
-<div class="header">
-<h1>Berk Media</h1>
-<span class="badge">v1.1</span>
-</div>
+<div class="header"><h1>Berk Media</h1><span class="badge">v1.1</span></div>
 <div class="container">
-<div class="search-bar">
-<input type="text" id="searchInput" placeholder="Film adı yazın..." autocomplete="off">
-<button id="searchBtn" onclick="search()">Ara</button>
-</div>
-<div id="results" class="results"></div>
-<div class="downloads">
-<h3>İndirmeler</h3>
-<div id="dlList"><div class="empty">Henüz indirme yok</div></div>
-</div>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Film adı yazın..." autocomplete="off">
+    <button id="searchBtn" onclick="doSearch()">Ara</button>
+  </div>
+  <div id="results" class="results"></div>
+  <div class="downloads">
+    <h3>İndirmeler</h3>
+    <div id="dlList"><div class="empty">Henüz indirme yok</div></div>
+  </div>
 </div>
 <div class="modal-overlay" id="modal">
-<div class="modal">
-<button class="close" onclick="closeModal()">&times;</button>
-<div id="modalContent"></div>
-</div>
+  <div class="modal">
+    <button class="close" onclick="closeModal()">&times;</button>
+    <div id="modalContent"></div>
+  </div>
 </div>
 <script>
-let dirs=[];
-let currentFilm=null;
-let probeData=null;
-let audioPriority=[];
-let subPriority=[];
+var dirs=[];
+var currentFilm=null;
+var probeData=null;
+var audioPriority=[];
+var subPriority=[];
 
-async function loadDirs(){
-  const r=await fetch('/api/dirs');
-  dirs=await r.json();
+function loadDirs(){
+  fetch('/api/dirs').then(function(r){return r.json()}).then(function(d){dirs=d});
 }
 
-async function search(){
-  const q=document.getElementById('searchInput').value.trim();
+function doSearch(){
+  var q=document.getElementById('searchInput').value.trim();
   if(q.length<2)return;
   document.getElementById('results').innerHTML='<div class="loading">Aranıyor...</div>';
   document.getElementById('searchBtn').disabled=true;
-  try{
-    const r=await fetch('/api/search?q='+encodeURIComponent(q));
-    const data=await r.json();
+  fetch('/api/search?q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(data){
     renderResults(data);
-  }catch(e){
+    document.getElementById('searchBtn').disabled=false;
+  }).catch(function(){
     document.getElementById('results').innerHTML='<div class="empty">Arama hatası</div>';
-  }
-  document.getElementById('searchBtn').disabled=false;
+    document.getElementById('searchBtn').disabled=false;
+  });
 }
 
 function renderResults(films){
-  const c=document.getElementById('results');
+  var c=document.getElementById('results');
   if(!films.length){c.innerHTML='<div class="empty">Sonuç bulunamadı</div>';return}
-  c.innerHTML=films.map(f=>{
-    const posterSrc=f.poster?'/api/poster?url='+encodeURIComponent(f.poster):'';
-    const posterHtml=posterSrc
-      ?`<div class="poster-wrap"><img src="${posterSrc}" alt="${f.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-poster>Poster yok</div>'"></div>`
-      :`<div class="poster-wrap"><div class="no-poster">Poster yok</div></div>`;
-    return `
-    <div class="card" onclick="showDetail('${f.url.replace(/'/g,"\\'")}')">
-      <span class="source">${f.source||''}</span>
-      ${posterHtml}
-      <div class="info">
-        <div class="title">${f.title}</div>
-        <div class="meta">
-          ${f.imdb?`<span class="imdb">IMDB ${f.imdb}</span>`:''}
-          ${f.quality?`<span class="quality">${f.quality}</span>`:''}
-          ${f.year||''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  var html='';
+  for(var i=0;i<films.length;i++){
+    var f=films[i];
+    var posterSrc=f.poster?'/api/poster?url='+encodeURIComponent(f.poster):'';
+    var posterHtml=posterSrc
+      ?'<div class="poster-wrap"><img src="'+posterSrc+'" alt="'+f.title+'" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=no-poster>Poster yok</div>\'"></div>'
+      :'<div class="poster-wrap"><div class="no-poster">Poster yok</div></div>';
+    var safeUrl=f.url.replace(/'/g,"\\'");
+    html+='<div class="card" onclick="showDetail(\''+safeUrl+'\')">';
+    html+='<span class="source-tag">'+(f.source||'')+'</span>';
+    html+=posterHtml;
+    html+='<div class="info">';
+    html+='<div class="title">'+f.title+'</div>';
+    html+='<div class="meta">';
+    if(f.imdb)html+='<span class="imdb">IMDB '+f.imdb+'</span>';
+    if(f.quality)html+='<span class="quality">'+f.quality+'</span>';
+    if(f.year)html+=f.year;
+    html+='</div></div></div>';
+  }
+  c.innerHTML=html;
 }
 
-async function showDetail(url){
+function showDetail(url){
   document.getElementById('modal').classList.add('active');
   document.getElementById('modalContent').innerHTML='<div class="loading">Yükleniyor...</div>';
+  currentFilm=null;
   probeData=null;
   audioPriority=[];
   subPriority=[];
-  try{
-    const r=await fetch('/api/film?url='+encodeURIComponent(url));
-    currentFilm=await r.json();
+
+  fetch('/api/film?url='+encodeURIComponent(url)).then(function(r){return r.json()}).then(function(film){
+    currentFilm=film;
     renderDetail();
-    if(currentFilm.youtube_url||currentFilm.youtube_id){
-      const ytUrl=currentFilm.youtube_url||`https://www.youtube.com/watch?v=${currentFilm.youtube_id}`;
-      document.getElementById('modalContent').innerHTML+='<div class="loading" id="probeStatus">Video bilgisi alınıyor...</div>';
-      try{
-        const pr=await fetch('/api/probe?url='+encodeURIComponent(ytUrl));
-        probeData=await pr.json();
+    if(film.youtube_url||film.youtube_id){
+      var ytUrl=film.youtube_url||('https://www.youtube.com/watch?v='+film.youtube_id);
+      document.getElementById('probeStatus').textContent='Video bilgisi alınıyor...';
+      fetch('/api/probe?url='+encodeURIComponent(ytUrl)).then(function(r){return r.json()}).then(function(pd){
+        probeData=pd;
         if(probeData.error){
-          document.getElementById('probeStatus').innerHTML='<div class="empty">'+probeData.error+'</div>';
+          renderDetail();
         }else{
           if(probeData.audio_formats&&probeData.audio_formats.length){
-            const turkish=probeData.audio_formats.find(a=>a.language&&(a.language.includes('tur')||a.language.includes('Türk')));
-            if(turkish)audioPriority=[turkish.language];
-            const english=probeData.audio_formats.find(a=>a.language&&(a.language.includes('eng')||a.language.includes('İng')));
-            if(english&&!audioPriority.includes(english.language))audioPriority.push(english.language);
+            for(var i=0;i<probeData.audio_formats.length;i++){
+              var a=probeData.audio_formats[i];
+              if(a.language&&(a.language.indexOf('tur')>=0||a.language.indexOf('Türk')>=0)){
+                audioPriority=[a.language];break;
+              }
+            }
+            for(var i=0;i<probeData.audio_formats.length;i++){
+              var a=probeData.audio_formats[i];
+              if(a.language&&(a.language.indexOf('eng')>=0||a.language.indexOf('İng')>=0)){
+                if(audioPriority.indexOf(a.language)<0)audioPriority.push(a.language);
+                break;
+              }
+            }
           }
           if(probeData.subtitles&&probeData.subtitles.length){
-            const trSub=probeData.subtitles.find(s=>s.language&&(s.language.includes('tur')||s.language.includes('tr')));
-            if(trSub)subPriority=[trSub.language];
-            const enSub=probeData.subtitles.find(s=>s.language&&(s.language.includes('eng')||s.language.includes('en')));
-            if(enSub&&!subPriority.includes(enSub.language))subPriority.push(enSub.language);
+            for(var i=0;i<probeData.subtitles.length;i++){
+              var s=probeData.subtitles[i];
+              if(s.language==='tr'||s.language.indexOf('tur')>=0){
+                subPriority=[s.language];break;
+              }
+            }
+            for(var i=0;i<probeData.subtitles.length;i++){
+              var s=probeData.subtitles[i];
+              if(s.language==='en'||s.language.indexOf('eng')>=0){
+                if(subPriority.indexOf(s.language)<0)subPriority.push(s.language);
+                break;
+              }
+            }
           }
           renderDetail();
         }
-      }catch(e){
-        document.getElementById('probeStatus').innerHTML='<div class="empty">Video bilgisi alınamadı</div>';
-      }
+      }).catch(function(){
+        renderDetail();
+      });
     }
-  }catch(e){
+  }).catch(function(){
     document.getElementById('modalContent').innerHTML='<div class="empty">Detay yüklenemedi</div>';
-  }
+  });
 }
 
 function renderDetail(){
-  const f=currentFilm;
+  var f=currentFilm;
   if(!f||!f.title)return;
-  awaitDirs();
-  const dirOptions=dirs.map(d=>`<option value="${d.path}">${d.name}</option>`).join('');
 
-  let qualityHtml='';
-  if(probeData&&probeData.video_formats&&probeData.video_formats.length){
-    qualityHtml=`
-      <div class="opt-group">
-        <label>Video Kalitesi</label>
-        <select id="qualitySelect">
-          ${probeData.video_formats.map((v,i)=>`<option value="${v.format_id}" ${i===0?'selected':''}>${v.label} (${v.ext})</option>`).join('')}
-        </select>
-      </div>`;
+  var dirOpts='';
+  for(var i=0;i<dirs.length;i++){
+    dirOpts+='<option value="'+dirs[i].path+'">'+dirs[i].name+'</option>';
   }
 
-  let audioHtml='';
-  if(probeData&&probeData.audio_formats&&probeData.audio_formats.length){
-    audioHtml=`
-      <div class="opt-group">
-        <label>Ses Dosyası (Sıralama için tıklayın)</label>
-        <div class="chips" id="audioChips">
-          ${probeData.audio_formats.map(a=>{
-            const idx=audioPriority.indexOf(a.language);
-            const active=idx>=0;
-            return `<span class="chip ${active?'active':''}" onclick="toggleAudio('${a.language}')">${a.label}${active?`<span class="order">#${idx+1}</span>`:''}</span>`;
-          }).join('')}
-        </div>
-        ${audioPriority.length?`
-          <div class="priority-list" id="audioPriority" style="margin-top:8px">
-            ${audioPriority.map((lang,i)=>`
-              <div class="priority-item">
-                <span class="num">${i+1}</span>
-                <span class="name">${lang}</span>
-                <span class="arrow" onclick="moveAudio(${i},-1)>&#9650;</span>
-                <span class="arrow" onclick="moveAudio(${i},1)>&#9660;</span>
-                <span class="remove" onclick="removeAudio(${i})">&times;</span>
-              </div>`).join('')}
-          </div>`:''}
-      </div>`;
+  var html='<div class="detail">';
+  html+='<div class="poster">';
+  if(f.poster)html+='<img src="/api/poster?url='+encodeURIComponent(f.poster)+'" alt="'+f.title+'">';
+  html+='</div>';
+  html+='<div class="info">';
+  html+='<h2>'+f.title+(f.year?' ('+f.year+')':'')+'</h2>';
+  if(f.imdb)html+='<div class="year">IMDB: '+f.imdb+'</div>';
+  if(f.duration)html+='<div class="year">'+f.duration+'</div>';
+  if(f.description)html+='<div class="desc">'+f.description.substring(0,300)+'...</div>';
+  if(f.director)html+='<div class="tags"><span class="tag">Yönetmen: '+f.director+'</span></div>';
+  html+='</div></div>';
+
+  var hasProbe=probeData&&!probeData.error;
+  if(hasProbe){
+    html+='<div class="opts">';
+    html+='<h3>İndirme Seçenekleri</h3>';
+
+    if(probeData.video_formats&&probeData.video_formats.length){
+      html+='<div class="opt-group"><label>Video Kalitesi</label><select id="qualitySelect">';
+      for(var i=0;i<probeData.video_formats.length;i++){
+        var v=probeData.video_formats[i];
+        html+='<option value="'+v.format_id+'"'+(i===0?' selected':'')+'>'+v.label+' ('+v.ext+')</option>';
+      }
+      html+='</select></div>';
+    }
+
+    if(probeData.audio_formats&&probeData.audio_formats.length){
+      html+='<div class="opt-group"><label>Ses Dosyası</label><div class="chip-list" id="audioChips">';
+      for(var i=0;i<probeData.audio_formats.length;i++){
+        var a=probeData.audio_formats[i];
+        var idx=audioPriority.indexOf(a.language);
+        var cls=idx>=0?'chip on':'chip';
+        html+='<span class="'+cls+'" data-lang="'+a.language+'" onclick="toggleAudio(this)">'+a.label;
+        if(idx>=0)html+='<span class="ord">#'+(idx+1)+'</span>';
+        html+='</span>';
+      }
+      html+='</div>';
+      if(audioPriority.length){
+        html+='<div class="pri-list">';
+        for(var i=0;i<audioPriority.length;i++){
+          html+='<div class="pri-item"><span class="num">'+(i+1)+'</span><span class="name">'+audioPriority[i]+'</span>';
+          html+='<span class="btns"><span onclick="moveAudio('+i+',-1)">&#9650;</span><span onclick="moveAudio('+i+',1)">&#9660;</span><span onclick="removeAudio('+i+')">&times;</span></span></div>';
+        }
+        html+='</div>';
+      }
+      html+='</div>';
+    }
+
+    if(probeData.subtitles&&probeData.subtitles.length){
+      var showSubs=[];
+      for(var i=0;i<probeData.subtitles.length;i++){
+        var s=probeData.subtitles[i];
+        if(s.language==='tr'||s.language==='en'||s.language.indexOf('tur')>=0||s.language.indexOf('eng')>=0||subPriority.indexOf(s.language)>=0){
+          showSubs.push(s);
+        }
+      }
+      if(!showSubs.length)showSubs=probeData.subtitles.slice(0,10);
+      html+='<div class="opt-group"><label>Altyazılar</label><div class="chip-list" id="subChips">';
+      for(var i=0;i<showSubs.length;i++){
+        var s=showSubs[i];
+        var idx=subPriority.indexOf(s.language);
+        var cls=idx>=0?'chip on':'chip';
+        html+='<span class="'+cls+'" data-lang="'+s.language+'" onclick="toggleSub(this)">'+s.label;
+        if(idx>=0)html+='<span class="ord">#'+(idx+1)+'</span>';
+        html+='</span>';
+      }
+      html+='</div>';
+      if(subPriority.length){
+        html+='<div class="pri-list">';
+        for(var i=0;i<subPriority.length;i++){
+          html+='<div class="pri-item"><span class="num">'+(i+1)+'</span><span class="name">'+subPriority[i]+'</span>';
+          html+='<span class="btns"><span onclick="moveSub('+i+',-1)">&#9650;</span><span onclick="moveSub('+i+',1)">&#9660;</span><span onclick="removeSub('+i+')">&times;</span></span></div>';
+        }
+        html+='</div>';
+      }
+      html+='</div>';
+    }
+
+    html+='<div class="opt-group"><label>Kaydetme Formatı</label><select id="formatSelect"><option value="mkv">MKV (varsayılan)</option><option value="mp4">MP4</option></select></div>';
+    html+='<div class="opt-group"><label>Kayıt Klasörü</label><select id="dirSelect">'+dirOpts+'</select></div>';
+    html+='</div>';
+  }else if(probeData&&probeData.error){
+    html+='<div class="opts"><div class="empty">Video bilgisi alınamadı: '+probeData.error+'</div></div>';
   }
 
-  let subHtml='';
-  if(probeData&&probeData.subtitles&&probeData.subtitles.length){
-    subHtml=`
-      <div class="opt-group">
-        <label>Altyazılar (Sıralama için tıklayın)</label>
-        <div class="chips" id="subChips">
-          ${probeData.subtitles.map(s=>{
-            const idx=subPriority.indexOf(s.language);
-            const active=idx>=0;
-            return `<span class="chip ${active?'active':''}" onclick="toggleSub('${s.language}')">${s.label}${active?`<span class="order">#${idx+1}</span>`:''}</span>`;
-          }).join('')}
-        </div>
-        ${subPriority.length?`
-          <div class="priority-list" id="subPriority" style="margin-top:8px">
-            ${subPriority.map((lang,i)=>`
-              <div class="priority-item">
-                <span class="num">${i+1}</span>
-                <span class="name">${lang}</span>
-                <span class="arrow" onclick="moveSub(${i},-1)>&#9650;</span>
-                <span class="arrow" onclick="moveSub(${i},1)>&#9660;</span>
-                <span class="remove" onclick="removeSub(${i})">&times;</span>
-              </div>`).join('')}
-          </div>`:''}
-      </div>`;
-  }
+  html+='<button class="dl-btn" onclick="startDownload()"'+(hasProbe?'':' disabled')+'>İndir</button>';
 
-  const hasProbe=probeData&&!probeData.error;
-
-  document.getElementById('modalContent').innerHTML=`
-    <div class="detail">
-      <div class="poster">
-        ${f.poster?`<img src="/api/poster?url=${encodeURIComponent(f.poster)}" alt="${f.title}">`:''}
-      </div>
-      <div class="info">
-        <h2>${f.title}${f.year?' ('+f.year+')':''}</h2>
-        ${f.imdb?`<div class="year">IMDB: ${f.imdb}</div>`:''}
-        ${f.duration?`<div class="year">${f.duration}</div>`:''}
-        ${f.description?`<div class="desc">${f.description.substring(0,300)}...</div>`:''}
-        ${f.director?`<div class="tags"><span class="tag">Yönetmen: ${f.director}</span></div>`:''}
-      </div>
-    </div>
-    ${hasProbe?`
-    <div class="options-section">
-      <h3><span class="icon">&#9881;</span> İndirme Seçenekleri</h3>
-      ${qualityHtml}
-      ${audioHtml}
-      ${subHtml}
-      <div class="opt-group">
-        <label>Kaydetme Formatı</label>
-        <select id="formatSelect">
-          <option value="mkv">MKV (varsayılan)</option>
-          <option value="mp4">MP4</option>
-        </select>
-      </div>
-      <div class="opt-group">
-        <label>Kayıt Klasörü</label>
-        <select id="dirSelect">${dirOptions}</select>
-      </div>
-    </div>
-    `:''}
-    <button class="dl-btn" onclick="startDownload()" ${!hasProbe?'disabled':''}>İndir</button>
-  `;
+  document.getElementById('modalContent').innerHTML=html;
 }
 
-function awaitDirs(){
-  if(!dirs.length)loadDirs();
+function toggleAudio(el){
+  var lang=el.getAttribute('data-lang');
+  var idx=audioPriority.indexOf(lang);
+  if(idx>=0)audioPriority.splice(idx,1);else audioPriority.push(lang);
+  renderDetail();
 }
-
-function toggleAudio(lang){
-  const idx=audioPriority.indexOf(lang);
-  if(idx>=0){
-    audioPriority.splice(idx,1);
-  }else{
-    audioPriority.push(lang);
-  }
+function removeAudio(i){audioPriority.splice(i,1);renderDetail()}
+function moveAudio(i,d){
+  var n=i+d;
+  if(n<0||n>=audioPriority.length)return;
+  var tmp=audioPriority[i];audioPriority[i]=audioPriority[n];audioPriority[n]=tmp;
+  renderDetail();
+}
+function toggleSub(el){
+  var lang=el.getAttribute('data-lang');
+  var idx=subPriority.indexOf(lang);
+  if(idx>=0)subPriority.splice(idx,1);else subPriority.push(lang);
+  renderDetail();
+}
+function removeSub(i){subPriority.splice(i,1);renderDetail()}
+function moveSub(i,d){
+  var n=i+d;
+  if(n<0||n>=subPriority.length)return;
+  var tmp=subPriority[i];subPriority[i]=subPriority[n];subPriority[n]=tmp;
   renderDetail();
 }
 
-function removeAudio(idx){
-  audioPriority.splice(idx,1);
-  renderDetail();
-}
-
-function moveAudio(idx,dir){
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=audioPriority.length)return;
-  [audioPriority[idx],audioPriority[newIdx]]=[audioPriority[newIdx],audioPriority[idx]];
-  renderDetail();
-}
-
-function toggleSub(lang){
-  const idx=subPriority.indexOf(lang);
-  if(idx>=0){
-    subPriority.splice(idx,1);
-  }else{
-    subPriority.push(lang);
-  }
-  renderDetail();
-}
-
-function removeSub(idx){
-  subPriority.splice(idx,1);
-  renderDetail();
-}
-
-function moveSub(idx,dir){
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=subPriority.length)return;
-  [subPriority[idx],subPriority[newIdx]]=[subPriority[newIdx],subPriority[idx]];
-  renderDetail();
-}
-
-async function startDownload(){
+function startDownload(){
   if(!currentFilm)return;
-  const qualityEl=document.getElementById('qualitySelect');
-  const formatEl=document.getElementById('formatSelect');
-  const dirEl=document.getElementById('dirSelect');
-  const format_id=qualityEl?qualityEl.value:'';
-  const output_format=formatEl?formatEl.value:'mkv';
-  const save_dir=dirEl?dirEl.value:(dirs[0]?.path||'/mnt/3tb/Medya/Movies');
-  const video_url=currentFilm.youtube_url||currentFilm.youtube_id?`https://www.youtube.com/watch?v=${currentFilm.youtube_id}`:(currentFilm.url||'');
+  var qualityEl=document.getElementById('qualitySelect');
+  var formatEl=document.getElementById('formatSelect');
+  var dirEl=document.getElementById('dirSelect');
+  var format_id=qualityEl?qualityEl.value:'';
+  var output_format=formatEl?formatEl.value:'mkv';
+  var save_dir=dirEl?dirEl.value:(dirs.length?dirs[0].path:'/mnt/3tb/Medya/Movies');
+  var video_url=currentFilm.youtube_url||(currentFilm.youtube_id?'https://www.youtube.com/watch?v='+currentFilm.youtube_id:currentFilm.url);
 
-  try{
-    const r=await fetch('/api/download',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        title:currentFilm.title+(currentFilm.year?' ('+currentFilm.year+')':''),
-        url:video_url,
-        format_id:format_id,
-        audio_lang:audioPriority[0]||'',
-        sub_langs:subPriority,
-        output_format:output_format,
-        save_dir:save_dir,
-        poster:currentFilm.poster||''
-      })
-    });
-    const data=await r.json();
+  document.querySelector('.dl-btn').disabled=true;
+  document.querySelector('.dl-btn').textContent='Başlatılıyor...';
+
+  fetch('/api/download',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      title:currentFilm.title+(currentFilm.year?' ('+currentFilm.year+')':''),
+      url:video_url,
+      format_id:format_id,
+      audio_lang:audioPriority[0]||'',
+      sub_langs:subPriority,
+      output_format:output_format,
+      save_dir:save_dir,
+      poster:currentFilm.poster||''
+    })
+  }).then(function(r){return r.json()}).then(function(data){
     if(data.task_id){
       closeModal();
       pollDownload(data.task_id);
+    }else{
+      alert('Hata: '+JSON.stringify(data));
+      document.querySelector('.dl-btn').disabled=false;
+      document.querySelector('.dl-btn').textContent='İndir';
     }
-  }catch(e){}
+  }).catch(function(e){
+    alert('Bağlantı hatası: '+e);
+    document.querySelector('.dl-btn').disabled=false;
+    document.querySelector('.dl-btn').textContent='İndir';
+  });
 }
 
-async function pollDownload(taskId){
-  const interval=setInterval(async()=>{
-    try{
-      const r=await fetch('/api/download/'+taskId);
-      const d=await r.json();
+function pollDownload(taskId){
+  var interval=setInterval(function(){
+    fetch('/api/download/'+taskId).then(function(r){return r.json()}).then(function(d){
       renderDownloads();
-      if(d.status==='completed'||d.status==='error'||d.status==='merge_error'){
-        clearInterval(interval);
-      }
-    }catch(e){clearInterval(interval)}
+      if(d.status==='completed'||d.status==='error'||d.status==='merge_error')clearInterval(interval);
+    }).catch(function(){clearInterval(interval)});
   },2000);
 }
 
-async function renderDownloads(){
-  try{
-    const r=await fetch('/api/downloads');
-    const data=await r.json();
-    const c=document.getElementById('dlList');
-    const items=Object.entries(data);
-    if(!items.length){c.innerHTML='<div class="empty">Henüz indirme yok</div>';return}
-    c.innerHTML=items.map(([id,d])=>`
-      <div class="dl-item">
-        <div>
-          <div class="title">${d.title||id}</div>
-          ${d.progress?`<div class="progress-bar"><div class="fill" style="width:${d.progress}%"></div></div>`:''}
-        </div>
-        <span class="status ${d.status}">${statusText(d.status)}</span>
-      </div>
-    `).join('');
-  }catch(e){}
+function renderDownloads(){
+  fetch('/api/downloads').then(function(r){return r.json()}).then(function(data){
+    var c=document.getElementById('dlList');
+    var keys=Object.keys(data);
+    if(!keys.length){c.innerHTML='<div class="empty">Henüz indirme yok</div>';return}
+    var html='';
+    for(var i=0;i<keys.length;i++){
+      var id=keys[i];
+      var d=data[id];
+      html+='<div class="dl-item"><div><div class="title">'+(d.title||id)+'</div>';
+      if(d.progress)html+='<div class="progress-bar"><div class="fill" style="width:'+d.progress+'%"></div></div>';
+      html+='</div><span class="status '+d.status+'">'+statusText(d.status)+'</span></div>';
+    }
+    c.innerHTML=html;
+  }).catch(function(){});
 }
 
 function statusText(s){
-  const map={starting:'Başlatılıyor',downloading:'İndiriliyor',downloading_hls:'HLS İndiriliyor',merging:'Birleştiriliyor',completed:'Tamamlandı',error:'Hata',merge_error:'Birleştirme Hatası'};
+  var map={starting:'Başlatılıyor',downloading:'İndiriliyor',downloading_hls:'HLS İndiriliyor',merging:'Birleştiriliyor',completed:'Tamamlandı',error:'Hata',merge_error:'Birleştirme Hatası'};
   return map[s]||s;
 }
 
 function closeModal(){document.getElementById('modal').classList.remove('active')}
 
-document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+document.getElementById('searchInput').addEventListener('keydown',function(e){if(e.key==='Enter')doSearch()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()});
 loadDirs();
 setInterval(renderDownloads,10000);
 </script>
