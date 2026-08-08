@@ -1,6 +1,7 @@
 """
 Berk Media v1.2 — Film arama ve indirme sistemi
 Coklu kaynak destekli: fullhdfilmizlesene.mx, filmmakinesi.to, ...
+Playwright ile video kaynagi cikarma destegi.
 """
 
 import os
@@ -10,6 +11,7 @@ import hashlib
 import asyncio
 import base64
 import shutil
+import logging
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
@@ -17,6 +19,15 @@ from datetime import datetime
 import httpx
 from fastapi import FastAPI, Request, Query, BackgroundTasks
 from fastapi.responses import HTMLResponse, Response
+
+logger = logging.getLogger("berk-media")
+
+try:
+    from playwright.async_api import async_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    logger.warning("Playwright not installed - video extraction for non-YouTube films disabled")
 
 app = FastAPI(title="Berk Media", docs_url=None, redoc_url=None)
 
@@ -250,8 +261,69 @@ def parse_fullhdfilmizlesene_details(html: str, url: str) -> dict:
     return details
 
 
+async def extract_video_with_playwright(page_url: str) -> dict:
+    """Use Playwright headless browser to extract video URL from film page."""
+    if not PLAYWRIGHT_AVAILABLE:
+        return {"error": "Playwright yuklu degil"}
+
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+            )
+            context = await browser.new_context(
+                user_agent=HEADERS["User-Agent"],
+                viewport={"width": 1920, "height": 1080},
+            )
+            page = await context.new_page()
+
+            video_urls = []
+            audio_urls = []
+
+            def on_response(response):
+                url = response.url
+                ct = response.headers.get("content-type", "")
+                if any(x in url for x in [".m3u8", "manifest"]):
+                    video_urls.append({"url": url, "type": "hls"})
+                elif ".mp4" in url and ("video" in ct or "octet" in ct or not ct):
+                    video_urls.append({"url": url, "type": "mp4"})
+
+            page.on("response", on_response)
+
+            await page.goto(page_url, wait_until="domcontentloaded", timeout=20000)
+            await page.wait_for_timeout(3000)
+
+            for sel in ["#play-video", ".video-play-button", "[data-play]"]:
+                try:
+                    btn = page.locator(sel)
+                    if await btn.count() > 0:
+                        await btn.click(timeout=3000)
+                        break
+                except Exception:
+                    continue
+
+            await page.wait_for_timeout(8000)
+
+            await browser.close()
+
+            if video_urls:
+                best = video_urls[0]
+                return {
+                    "video_url": best["url"],
+                    "type": best["type"],
+                    "all_urls": video_urls,
+                }
+
+            return {"error": "Video URL bulunamadi. Player korumali kaynak kullaniyor."}
+
+    except Exception as e:
+        logger.error(f"Playwright extraction error: {e}")
+        return {"error": f"Playwright hatasi: {str(e)[:200]}"}
+
+
 async def extract_video_from_film_page(url: str) -> dict:
-    """Try to extract video URL from fullhdfilmizlesene film page via client.php."""
+    """Try to extract video URL from film page. Tries HTTP first, then Playwright."""
     try:
         async with httpx.AsyncClient(headers=HEADERS, timeout=15, follow_redirects=True) as client:
             resp = await client.get(url)
@@ -272,22 +344,11 @@ async def extract_video_from_film_page(url: str) -> dict:
             if mp4_urls:
                 return {"video_url": mp4_urls[0], "type": "mp4"}
 
-            mx_cfg_match = re.search(r'window\._mxCfg\s*=\s*({[^;]+});', html)
-            if mx_cfg_match:
-                try:
-                    cfg = json.loads(mx_cfg_match.group(1))
-                    mx_p = cfg.get("p", "")
-                    if mx_p:
-                        decoded_p = _mxo_decode(mx_p)
-                        if decoded_p and ("http" in decoded_p or "/" in decoded_p):
-                            return {"video_url": decoded_p, "type": "mx_player"}
-                except json.JSONDecodeError:
-                    pass
+    except Exception:
+        pass
 
-            return {"error": "Video kaynagi bulunamadi. Film sayfasi korumali player kullaniyor."}
-
-    except Exception as e:
-        return {"error": f"Hata: {str(e)}"}
+    logger.info(f"HTTP extraction failed for {url}, trying Playwright...")
+    return await extract_video_with_playwright(url)
 
 
 def _mxo_decode(val: str) -> str:
@@ -558,6 +619,12 @@ async def api_download(request: Request, background_tasks: BackgroundTasks):
 
             is_youtube = "youtube.com" in download_url or "youtu.be" in download_url
             is_m3u8 = ".m3u8" in download_url
+            is_direct = download_url.startswith("http") and (
+                download_url.endswith(".mp4") or download_url.endswith(".mkv") or
+                download_url.endswith(".avi") or download_url.endswith(".ts")
+            )
+
+            actual_url = download_url
 
             if is_youtube:
                 temp_out = task_dir / f"video{final_ext}"
@@ -593,16 +660,59 @@ async def api_download(request: Request, background_tasks: BackgroundTasks):
                 shutil.move(str(temp_out), str(final_path))
 
             else:
-                active_downloads[task_id]["status"] = "downloading"
+                active_downloads[task_id]["status"] = "extracting"
                 active_downloads[task_id]["progress"] = 0
 
-                temp_out = task_dir / f"video{final_ext}"
-                ok = await download_file(download_url, temp_out, task_id)
-                if not ok:
+                result = await extract_video_from_film_page(download_url)
+
+                if result.get("error"):
                     active_downloads[task_id]["status"] = "error"
-                    active_downloads[task_id]["error"] = "Dosya indirilemedi"
+                    active_downloads[task_id]["error"] = result["error"]
                     return
-                shutil.move(str(temp_out), str(final_path))
+
+                actual_url = result.get("video_url", download_url)
+                vid_type = result.get("type", "unknown")
+                logger.info(f"Extracted video: type={vid_type}, url={actual_url[:200]}")
+
+                if vid_type == "hls" or ".m3u8" in actual_url:
+                    temp_out = task_dir / f"video.mp4"
+                    cmd = [
+                        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                        "-i", actual_url, "-c", "copy", "-movflags", "+faststart",
+                        str(temp_out),
+                    ]
+                    proc = await asyncio.create_subprocess_exec(
+                        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                    )
+                    active_downloads[task_id]["status"] = "downloading"
+                    _, stderr = await proc.communicate()
+                    if proc.returncode != 0:
+                        active_downloads[task_id]["status"] = "error"
+                        active_downloads[task_id]["error"] = f"ffmpeg hatasi: {stderr.decode(errors='ignore')[:200]}"
+                        return
+                    shutil.move(str(temp_out), str(final_path))
+                elif "youtube.com" in actual_url or "youtu.be" in actual_url:
+                    temp_out = task_dir / f"video{final_ext}"
+                    ok, err = await download_with_ytdlp(
+                        actual_url, temp_out, task_id,
+                        format_id=format_id,
+                        audio_lang=audio_lang,
+                        sub_langs=sub_langs,
+                        output_format=output_format,
+                    )
+                    if not ok:
+                        active_downloads[task_id]["status"] = "error"
+                        active_downloads[task_id]["error"] = f"yt-dlp hatasi: {err[:200]}"
+                        return
+                    shutil.move(str(temp_out), str(final_path))
+                else:
+                    temp_out = task_dir / f"video{final_ext}"
+                    ok = await download_file(actual_url, temp_out, task_id)
+                    if not ok:
+                        active_downloads[task_id]["status"] = "error"
+                        active_downloads[task_id]["error"] = "Video indirilemedi"
+                        return
+                    shutil.move(str(temp_out), str(final_path))
 
             if poster_url:
                 poster_path = task_dir / "poster.jpg"
